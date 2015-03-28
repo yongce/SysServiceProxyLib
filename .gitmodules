@@ -1,0 +1,6 @@
+[submodule "submodules/AndroidLib"]
+	path = submodules/AndroidLib
+	url = https://github.com/yongce/AndroidLib.git
+[submodule "submodules/libsuperuser"]
+	path = submodules/libsuperuser
+	url = https://github.com/yongce/libsuperuser.git

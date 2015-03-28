@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SSProxyDemo</string>
+    <string name="action_settings">Settings</string>
+    <string name="btn_start_daemon">Start Daemon</string>
+    <string name="btn_stop_daemon">Stop Daemon</string>
+    <string name="btn_goto_sleep">Screen off</string>
+    <string name="btn_reboot">Reboot</string>
+    <string name="btn_test_raw_invoking">Test raw invoking (Stop self)</string>
+
+    <string name="tips_start_daemon_success">succeeded to start daemon</string>
+    <string name="tips_start_daemon_failure">failed to stop daemon</string>
+    <string name="tips_stop_daemon_success">succeeded to stop daemon</string>
+    <string name="tips_stop_daemon_failure">failed to stop daemon</string>
+    <string name="tips_daemon_not_running">SSProxy daemon is not running</string>
+</resources>

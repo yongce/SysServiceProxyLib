@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="me.ycdev.android.lib.ssproxy.test" >
+
+    <uses-sdk
+        android:minSdkVersion="9"
+        android:targetSdkVersion="9" />
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <instrumentation
+        android:name="android.test.InstrumentationTestRunner"
+        android:functionalTest="false"
+        android:handleProfiling="false"
+        android:label="Tests for me.ycdev.android.lib.ssproxy.test"
+        android:targetPackage="me.ycdev.android.lib.ssproxy.test" />
+
+    <application android:allowBackup="true" >
+        <uses-library android:name="android.test.runner" />
+    </application>
+
+</manifest>

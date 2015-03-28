@@ -1,0 +1,7 @@
+include ':lib', ':demo'
+
+include ':androidLib'
+project(':androidLib').projectDir = file('submodules/AndroidLib/lib')
+
+include ':libsuperuser'
+project(':libsuperuser').projectDir = file('submodules/libsuperuser/libsuperuser')

@@ -25,3 +25,11 @@ proguard/
 
 # Log Files
 *.log
+
+# Gradle files
+.gradle/
+build/
+
+# Android Studio files
+.idea/
+*.iml

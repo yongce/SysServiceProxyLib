@@ -1,0 +1,34 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 9
+    }
+
+    buildTypes {
+        release {
+            buildConfigField "boolean", "DISABLE_LOG", "false"
+            buildConfigField "boolean", "DEBUG_LOG", "true"
+        }
+
+        debug {
+            buildConfigField "boolean", "DISABLE_LOG", "false"
+            buildConfigField "boolean", "DEBUG_LOG", "true"
+        }
+    }
+
+    lintOptions {
+        textReport true
+        textOutput 'stdout'
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':androidLib')
+    compile project(':libsuperuser')
+    compile 'com.android.support:support-annotations:21.0.3'
+}
