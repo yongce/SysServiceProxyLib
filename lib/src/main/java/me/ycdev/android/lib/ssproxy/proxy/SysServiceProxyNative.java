@@ -1,15 +1,14 @@
 package me.ycdev.android.lib.ssproxy.proxy;
 
-import android.os.Binder;
-import android.os.IBinder;
-import android.os.Parcel;
-import android.os.RemoteException;
+import android.os.*;
+import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.HashMap;
 
 import me.ycdev.android.lib.common.internalapi.android.os.ServiceManagerIA;
+import me.ycdev.android.lib.ssproxy.utils.LibConfigs;
 import me.ycdev.android.lib.ssproxy.utils.LibLogger;
 
 /**
@@ -17,6 +16,9 @@ import me.ycdev.android.lib.ssproxy.utils.LibLogger;
  * <p>Note: Based on the code of android.os.ServiceManagerNative.</p>
  */
 public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
+    private static final String TAG = "SysServiceProxyNative";
+    private static final boolean DEBUG = LibConfigs.DEBUG_LOG;
+
     private final HashMap<String, BinderWrapper> mCachedServices = new HashMap<>();
 
     private int mOwnerUid;
@@ -55,6 +57,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
     @Override
     public boolean onTransact(int code, @NonNull Parcel data, @NonNull Parcel reply,
             int flags) throws RemoteException {
+        if (DEBUG) LibLogger.d(TAG, "onTransact: " + code + ", caller uid: " + getCallingUid());
         checkCallerPermission();
         switch (code) {
             case ISysServiceProxy.GET_SERVICE_TRANSACTION: {
@@ -97,7 +100,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
 
     private void checkCallerPermission() {
         int uid = getCallingUid();
-        if (uid != mOwnerUid) {
+        if (uid != mOwnerUid && uid != Process.SYSTEM_UID && uid != 2000 /* SHELL UID */) {
             throw new SecurityException("Unknown caller uid: " + uid + ", != " + mOwnerUid);
         }
     }
