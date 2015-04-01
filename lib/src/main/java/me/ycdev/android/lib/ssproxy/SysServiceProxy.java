@@ -138,8 +138,10 @@ public class SysServiceProxy {
         }
     }
 
-    @Nullable
-    public String[] listServices() {
+    // hidden
+    @SuppressWarnings("unused")
+    String[] listServices() {
+        // The service names may be null on some devices
         IBinder sspBinder = ServiceManagerIA.getService(mSspName);
         ISysServiceProxy sspService = SysServiceProxyNative.asInterface(sspBinder);
         if (sspService != null) {

@@ -21,9 +21,9 @@ class RootPermUtils {
     public static void runSuCommand(String[] cmds, String selinuxContext) {
         if (!TextUtils.isEmpty(selinuxContext) && isSELinuxEnforced()) {
             String shell = Shell.SU.shell(0, selinuxContext);
-            Shell.run(shell, cmds, null, false);
+            Shell.run(shell, cmds, null, false, false);
         } else {
-            Shell.SU.run(cmds);
+            Shell.run("su", cmds, null, false, false);
         }
     }
 

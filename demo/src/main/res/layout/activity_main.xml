@@ -13,29 +13,41 @@
         android:id="@+id/start_daemon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:text="@string/btn_start_daemon"/>
 
     <Button
         android:id="@+id/stop_daemon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:text="@string/btn_stop_daemon"/>
 
     <Button
         android:id="@+id/goto_sleep"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:text="@string/btn_goto_sleep"/>
 
     <Button
         android:id="@+id/reboot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:text="@string/btn_reboot"/>
+
+    <Button
+        android:id="@+id/list_services"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:text="@string/btn_list_services"/>
 
     <Button
         android:id="@+id/test_raw_invoking"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="5dp"
         android:text="@string/btn_test_raw_invoking"/>
 </LinearLayout>

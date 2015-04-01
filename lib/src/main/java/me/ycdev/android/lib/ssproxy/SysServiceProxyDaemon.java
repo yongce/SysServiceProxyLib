@@ -62,6 +62,7 @@ class SysServiceProxyDaemon {
         // Change the process name
         ProcessIA.setArgV0(SysServiceProxy.SSP_NAME_PREFIX + ownerUid);
         int ppid = ProcessIA.myPpid();
+        if (DEBUG) LibLogger.d(TAG, "daemon parent pid: " + ppid);
         android.os.Process.killProcess(ppid);
 
         // Keep the process running
@@ -80,7 +81,7 @@ class SysServiceProxyDaemon {
             }
         }
 
-        LibLogger.w(TAG, "ssp service died: " + sspBinder);
+        if (DEBUG) LibLogger.w(TAG, "ssp service died: " + sspBinder);
     }
 
     private static void stopDaemon(int ownerUid, String pkgName) {
@@ -98,8 +99,18 @@ class SysServiceProxyDaemon {
         SysServiceProxyNative sspBinder = new SysServiceProxyNative();
         sspBinder.setOwnerUid(ownerUid);
         ServiceManagerIA.addService(serviceName, sspBinder);
-
         if (DEBUG) LibLogger.d(TAG, "spp is replaced and should go to die");
+
+        IBinder checkBinder = ServiceManagerIA.checkService(serviceName);
+        if (checkBinder != sspBinder) {
+            if (DEBUG) LibLogger.w(TAG, "failed to replace the old binder");
+            // Android 2.3?
+            int sspDaemonPid = ProcessIA.getProcessPid(SysServiceProxy.SSP_NAME_PREFIX + ownerUid);
+            if (DEBUG) LibLogger.d(TAG, "found daemon pid: " + sspDaemonPid);
+            if (sspDaemonPid > 0) {
+                android.os.Process.killProcess(sspDaemonPid);
+            }
+        }
         // Let the process to die to make the service to die
     }
 }

@@ -8,7 +8,9 @@ import android.os.SystemClock;
 import android.test.AndroidTestCase;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
+import eu.chainfire.libsuperuser.Debug;
 import eu.chainfire.libsuperuser.Shell;
 import me.ycdev.android.lib.common.compat.PowerManagerCompat;
 import me.ycdev.android.lib.common.internalapi.android.os.PowerManagerIA;
@@ -16,6 +18,23 @@ import me.ycdev.android.lib.ssproxy.utils.TestLogger;
 
 public class SysServiceProxyTest extends AndroidTestCase {
     private static final String TAG = "SysServiceProxyTest";
+
+    public SysServiceProxyTest() {
+        Debug.setDebug(true);
+    }
+
+    @Override
+    public void setContext(Context context) {
+        super.setContext(context);
+
+        long endTime = SystemClock.elapsedRealtime() + TimeUnit.SECONDS.toMillis(10);
+        while (null == context.getApplicationContext()) {
+            if (SystemClock.elapsedRealtime() >= endTime) {
+                fail("fail to get application context initialized");
+            }
+            SystemClock.sleep(100);
+        }
+    }
 
     public void test_startDaemon() {
         assertTrue("wasn't granted root permission", Shell.SU.available());
@@ -37,26 +56,6 @@ public class SysServiceProxyTest extends AndroidTestCase {
         SysServiceProxy ssp = SysServiceProxy.getInstance(getContext());
         ssp.startDaemon();
         assertTrue("failed to start daemon", ssp.isDaemonAlive());
-
-        ssp.stopDaemon();
-        assertFalse("failed to stop daemon", ssp.isDaemonAlive());
-    }
-
-    public void test_listServices() {
-        SysServiceProxy ssp = SysServiceProxy.getInstance(getContext());
-        ssp.startDaemon();
-        assertTrue("failed to start daemon", ssp.isDaemonAlive());
-
-        String[] services = ssp.listServices();
-        assertNotNull("failed to get services", services);
-
-        Arrays.sort(services);
-        TestLogger.d(TAG, "all services: " + Arrays.toString(services));
-        String sspName = SysServiceProxy.getSspServiceName(getContext().getPackageName());
-        assertTrue("ssp not found", Arrays.binarySearch(services, sspName) >= 0);
-        assertTrue("power not found", Arrays.binarySearch(services, "power") >= 0);
-        assertTrue("batterystats not found", Arrays.binarySearch(services, "batteryinfo") >= 0
-                || Arrays.binarySearch(services, "batterystats") >= 0);
 
         ssp.stopDaemon();
         assertFalse("failed to stop daemon", ssp.isDaemonAlive());

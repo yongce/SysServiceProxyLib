@@ -1,5 +1,6 @@
 package me.ycdev.android.lib.ssproxy.demo;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +13,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import java.util.Arrays;
 
 import eu.chainfire.libsuperuser.Debug;
 import me.ycdev.android.lib.common.internalapi.android.app.ActivityManagerIA;
@@ -37,6 +40,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
 
     private Button mGotoSleepBtn;
     private Button mRebootBtn;
+    private Button mListServicesBtn;
     private Button mTestRawInvokingBtn;
 
     @Override
@@ -84,6 +88,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
         mGotoSleepBtn.setOnClickListener(this);
         mRebootBtn = (Button) findViewById(R.id.reboot);
         mRebootBtn.setOnClickListener(this);
+        mListServicesBtn = (Button) findViewById(R.id.list_services);
+        mListServicesBtn.setOnClickListener(this);
         mTestRawInvokingBtn = (Button) findViewById(R.id.test_raw_invoking);
         mTestRawInvokingBtn.setOnClickListener(this);
 
@@ -122,6 +128,8 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             gotoSleep();
         } else if (v == mRebootBtn) {
             reboot();
+        } else if (v == mListServicesBtn) {
+            listServices();
         } else if (v == mTestRawInvokingBtn) {
             testRawInvoking();
         }
@@ -142,7 +150,7 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     }
 
     private void reboot() {
-        IBinder powerBinder = SysServiceProxy.getInstance(this).getService(Context.POWER_SERVICE);
+        IBinder powerBinder = SysServiceProxy.getInstance(this).checkService(Context.POWER_SERVICE);
         AppLogger.d(TAG, "power binder: " + powerBinder);
         if (powerBinder != null) {
             Object powerService = PowerManagerIA.asInterface(powerBinder);
@@ -150,6 +158,18 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
             if (powerService != null) {
                 PowerManagerIA.reboot(powerService, "reboot");
             }
+        } else {
+            mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
+        }
+    }
+
+    private void listServices() {
+        if (SysServiceProxy.getInstance(this).isDaemonAlive()) {
+            String[] services = ServiceManagerIA.listServices();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(R.string.tips_service_list);
+            builder.setMessage(Arrays.toString(services));
+            builder.create().show();
         } else {
             mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
         }
