@@ -11,10 +11,18 @@ import android.os.IInterface;
 public interface ISysServiceProxy extends IInterface {
     static final String SSP_DESCRIPTOR = "me.ycdev.android.lib.ssproxy.proxy.ISysServiceProxy";
 
-    static final int GET_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION;
-    static final int CHECK_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 1;
-    static final int ADD_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 2;
-    static final int LIST_SERVICES_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 3;
+    static final int SSP_VERSION = 1;
+
+    static final int GET_SSP_VERSION_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION;
+    static final int GET_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 1;
+    static final int CHECK_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 2;
+    static final int ADD_SERVICE_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 3;
+    static final int LIST_SERVICES_TRANSACTION = IBinder.FIRST_CALL_TRANSACTION + 4;
+
+    /**
+     * Get version of the SSP binder.
+     */
+    public int getSspVersion();
 
     /**
      * Retrieve an existing service called @a name from the

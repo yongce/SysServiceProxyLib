@@ -5,7 +5,10 @@ import android.os.Process;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.Map;
 
 import me.ycdev.android.lib.common.internalapi.android.os.ServiceManagerIA;
 import me.ycdev.android.lib.ssproxy.utils.LibConfigs;
@@ -22,6 +25,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
     private final HashMap<String, BinderWrapper> mCachedServices = new HashMap<>();
 
     private int mOwnerUid;
+    private int mSspVersion;
 
     /**
      * Cast a Binder object into a service manager interface, generating
@@ -41,12 +45,10 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
         return new SysServiceProxyProxy(obj);
     }
 
-    public SysServiceProxyNative() {
+    public SysServiceProxyNative(int ownerUid, int sspVersion) {
         attachInterface(this, SSP_DESCRIPTOR);
-    }
-
-    public void setOwnerUid(int ownerUid) {
         mOwnerUid = ownerUid;
+        mSspVersion = sspVersion;
     }
 
     @Override
@@ -58,9 +60,17 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
     public boolean onTransact(int code, @NonNull Parcel data, @NonNull Parcel reply,
             int flags) throws RemoteException {
         if (DEBUG) LibLogger.d(TAG, "onTransact: " + code + ", caller uid: " + getCallingUid());
-        checkCallerPermission();
+        checkCallerPermission(code);
         switch (code) {
-            case ISysServiceProxy.GET_SERVICE_TRANSACTION: {
+            case GET_SSP_VERSION_TRANSACTION: {
+                data.enforceInterface(ISysServiceProxy.SSP_DESCRIPTOR);
+                int version = getSspVersion();
+                reply.writeNoException();
+                reply.writeInt(version);
+                return true;
+            }
+
+            case GET_SERVICE_TRANSACTION: {
                 data.enforceInterface(ISysServiceProxy.SSP_DESCRIPTOR);
                 String name = data.readString();
                 IBinder service = getService(name);
@@ -69,7 +79,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
                 return true;
             }
 
-            case ISysServiceProxy.CHECK_SERVICE_TRANSACTION: {
+            case CHECK_SERVICE_TRANSACTION: {
                 data.enforceInterface(ISysServiceProxy.SSP_DESCRIPTOR);
                 String name = data.readString();
                 IBinder service = checkService(name);
@@ -78,7 +88,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
                 return true;
             }
 
-            case ISysServiceProxy.ADD_SERVICE_TRANSACTION: {
+            case ADD_SERVICE_TRANSACTION: {
                 data.enforceInterface(ISysServiceProxy.SSP_DESCRIPTOR);
                 String name = data.readString();
                 IBinder service = data.readStrongBinder();
@@ -87,7 +97,7 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
                 return true;
             }
 
-            case ISysServiceProxy.LIST_SERVICES_TRANSACTION: {
+            case LIST_SERVICES_TRANSACTION: {
                 data.enforceInterface(ISysServiceProxy.SSP_DESCRIPTOR);
                 String[] list = listServices();
                 reply.writeNoException();
@@ -98,11 +108,32 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
         return super.onTransact(code, data, reply, flags);
     }
 
-    private void checkCallerPermission() {
+    private void checkCallerPermission(int code) {
         int uid = getCallingUid();
-        if (uid != mOwnerUid && uid != Process.SYSTEM_UID && uid != 2000 /* SHELL UID */) {
-            throw new SecurityException("Unknown caller uid: " + uid + ", != " + mOwnerUid);
+        switch (code) {
+            case GET_SSP_VERSION_TRANSACTION:
+            case GET_SERVICE_TRANSACTION:
+            case CHECK_SERVICE_TRANSACTION:
+            case ADD_SERVICE_TRANSACTION:
+            case LIST_SERVICES_TRANSACTION: {
+                if (uid != mOwnerUid) {
+                    throw new SecurityException("Unknown caller uid: " + uid + ", != " + mOwnerUid);
+                }
+                break;
+            }
+
+            default: {
+                if (uid != Process.SYSTEM_UID && uid != 0 /* root */ && uid != 2000 /* SHELL UID */) {
+                    throw new SecurityException("Unknown caller uid: " + uid + ", != " + mOwnerUid);
+                }
+                break;
+            }
         }
+    }
+
+    @Override
+    public int getSspVersion() {
+        return mSspVersion;
     }
 
     @Override
@@ -150,6 +181,20 @@ public class SysServiceProxyNative extends Binder implements ISysServiceProxy {
     public String[] listServices() {
         return ServiceManagerIA.listServices();
     }
+
+    @Override
+    protected void dump(FileDescriptor fd, PrintWriter fout, String[] args) {
+        super.dump(fd, fout, args);
+        fout.println("Service: " + SSP_DESCRIPTOR);
+        fout.println("Version: " + mSspVersion);
+        fout.println("Owner: " + mOwnerUid);
+        fout.println("Caches: ");
+        synchronized (mCachedServices) {
+            for (Map.Entry<String, BinderWrapper> entry : mCachedServices.entrySet()) {
+                fout.println("\t" + entry.getKey() + ": " + entry.getValue().isBinderAlive());
+            }
+        }
+    }
 }
 
 class BinderWrapper extends Binder {
@@ -183,6 +228,24 @@ class SysServiceProxyProxy implements ISysServiceProxy {
     @Override
     public IBinder asBinder() {
         return mRemote;
+    }
+
+    @Override
+    public int getSspVersion() {
+        Parcel data = Parcel.obtain();
+        Parcel reply = Parcel.obtain();
+        try {
+            data.writeInterfaceToken(ISysServiceProxy.SSP_DESCRIPTOR);
+            mRemote.transact(GET_SSP_VERSION_TRANSACTION, data, reply, 0);
+            reply.readException();
+            return reply.readInt();
+        } catch (RemoteException e) {
+            LibLogger.w(TAG, "ssproxy died?", e);
+        } finally {
+            reply.recycle();
+            data.recycle();
+        }
+        return -1;
     }
 
     @Override

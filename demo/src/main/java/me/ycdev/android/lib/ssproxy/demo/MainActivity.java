@@ -136,31 +136,35 @@ public class MainActivity extends ActionBarActivity implements View.OnClickListe
     }
 
     private void gotoSleep() {
-        IBinder powerBinder = SysServiceProxy.getInstance(this).getService(Context.POWER_SERVICE);
-        AppLogger.d(TAG, "power binder: " + powerBinder);
-        if (powerBinder != null) {
-            Object powerService = PowerManagerIA.asInterface(powerBinder);
-            AppLogger.d(TAG, "power service: " + powerService);
-            if (powerService != null) {
-                PowerManagerIA.goToSleep(powerService, SystemClock.uptimeMillis());
+        if (SysServiceProxy.getInstance(this).isDaemonAlive()) {
+            IBinder powerBinder = SysServiceProxy.getInstance(this).getService(Context.POWER_SERVICE);
+            AppLogger.d(TAG, "power binder: " + powerBinder);
+            if (powerBinder != null) {
+                Object powerService = PowerManagerIA.asInterface(powerBinder);
+                AppLogger.d(TAG, "power service: " + powerService);
+                if (powerService != null) {
+                    PowerManagerIA.goToSleep(powerService, SystemClock.uptimeMillis());
+                }
+                return;
             }
-        } else {
-            mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
         }
+        mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
     }
 
     private void reboot() {
-        IBinder powerBinder = SysServiceProxy.getInstance(this).checkService(Context.POWER_SERVICE);
-        AppLogger.d(TAG, "power binder: " + powerBinder);
-        if (powerBinder != null) {
-            Object powerService = PowerManagerIA.asInterface(powerBinder);
-            AppLogger.d(TAG, "power service: " + powerService);
-            if (powerService != null) {
-                PowerManagerIA.reboot(powerService, "reboot");
+        if (SysServiceProxy.getInstance(this).isDaemonAlive()) {
+            IBinder powerBinder = SysServiceProxy.getInstance(this).checkService(Context.POWER_SERVICE);
+            AppLogger.d(TAG, "power binder: " + powerBinder);
+            if (powerBinder != null) {
+                Object powerService = PowerManagerIA.asInterface(powerBinder);
+                AppLogger.d(TAG, "power service: " + powerService);
+                if (powerService != null) {
+                    PowerManagerIA.reboot(powerService, "reboot");
+                }
+                return;
             }
-        } else {
-            mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
         }
+        mHandler.obtainMessage(MSG_DAEMON_NOT_RUNNING).sendToTarget();
     }
 
     private void listServices() {

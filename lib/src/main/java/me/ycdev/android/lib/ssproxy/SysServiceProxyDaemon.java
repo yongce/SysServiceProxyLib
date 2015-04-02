@@ -22,10 +22,6 @@ class SysServiceProxyDaemon {
 
     public static void main(String[] args) {
         if (DEBUG) LibLogger.d(TAG, "Received params: " + Arrays.toString(args));
-        if (args.length != 3) {
-            if (DEBUG) LibLogger.e(TAG, "Usage: SysServiceProxyDaemon <cmd> <cmd parameters>");
-            return;
-        }
 
         // Check if we have the necessary permission.
         int uid = android.os.Process.myUid();
@@ -38,23 +34,17 @@ class SysServiceProxyDaemon {
         int ownerUid = StringUtils.parseInt(args[1], 0);
         String pkgName = args[2];
         if (CMD_START.equals(cmd)) {
-            startDaemon(ownerUid, pkgName);
+            int sspVersion = StringUtils.parseInt(args[3], 0);
+            startDaemon(ownerUid, pkgName, sspVersion);
         } else if (CMD_STOP.equals(cmd)) {
             stopDaemon(ownerUid, pkgName);
         }
     }
 
-    private static void startDaemon(int ownerUid, String pkgName) {
-        // Check if the service is running
-        String serviceName = SysServiceProxy.getSspServiceName(pkgName);
-        if (ServiceManagerIA.checkService(serviceName) != null) {
-            if (DEBUG) LibLogger.w(TAG, "SSP is running!");
-            return;
-        }
-
+    private static void startDaemon(int ownerUid, String pkgName, int sspVersion) {
         // Add the service into ServiceManager
-        SysServiceProxyNative sspBinder = new SysServiceProxyNative();
-        sspBinder.setOwnerUid(ownerUid);
+        SysServiceProxyNative sspBinder = new SysServiceProxyNative(ownerUid, sspVersion);
+        String serviceName = SysServiceProxy.getSspServiceName(pkgName);
         ServiceManagerIA.addService(serviceName, sspBinder);
 
         if (DEBUG) LibLogger.d(TAG, "ssp is added");
@@ -96,8 +86,7 @@ class SysServiceProxyDaemon {
         ProcessIA.setArgV0(SysServiceProxy.SSP_NAME_PREFIX + "stop-" + ownerUid);
 
         // Replace the service to make the old one to die
-        SysServiceProxyNative sspBinder = new SysServiceProxyNative();
-        sspBinder.setOwnerUid(ownerUid);
+        SysServiceProxyNative sspBinder = new SysServiceProxyNative(ownerUid, 0);
         ServiceManagerIA.addService(serviceName, sspBinder);
         if (DEBUG) LibLogger.d(TAG, "spp is replaced and should go to die");
 

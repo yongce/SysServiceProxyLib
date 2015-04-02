@@ -7,18 +7,16 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.test.AndroidTestCase;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import eu.chainfire.libsuperuser.Debug;
 import eu.chainfire.libsuperuser.Shell;
 import me.ycdev.android.lib.common.compat.PowerManagerCompat;
 import me.ycdev.android.lib.common.internalapi.android.os.PowerManagerIA;
-import me.ycdev.android.lib.ssproxy.utils.TestLogger;
+import me.ycdev.android.lib.ssproxy.proxy.ISysServiceProxy;
+import me.ycdev.android.lib.ssproxy.proxy.SysServiceProxyNative;
 
 public class SysServiceProxyTest extends AndroidTestCase {
-    private static final String TAG = "SysServiceProxyTest";
-
     public SysServiceProxyTest() {
         Debug.setDebug(true);
     }
@@ -59,6 +57,29 @@ public class SysServiceProxyTest extends AndroidTestCase {
 
         ssp.stopDaemon();
         assertFalse("failed to stop daemon", ssp.isDaemonAlive());
+    }
+
+    public void test_getSspVersion() {
+        SysServiceProxy ssp = SysServiceProxy.getInstance(getContext());
+        ssp.stopDaemon();
+        assertFalse("failed to stop daemon", ssp.isDaemonAlive());
+
+        // ssp will be added
+        int lowSspVersion = ISysServiceProxy.SSP_VERSION;
+        ssp.doStartDaemon(android.os.Process.myUid(), lowSspVersion);
+        assertTrue("failed to start daemon", ssp.isDaemonAlive());
+        assertEquals("ssp version not compatible", lowSspVersion, ssp.getSspVersion());
+
+        // ssp will be updated
+        int highSspVersion = ISysServiceProxy.SSP_VERSION + 1;
+        ssp.doStartDaemon(android.os.Process.myUid(), highSspVersion);
+        assertTrue("failed to start daemon", ssp.isDaemonAlive());
+        assertEquals("ssp version not compatible", highSspVersion, ssp.getSspVersion());
+
+        // no change
+        ssp.doStartDaemon(android.os.Process.myUid(), lowSspVersion);
+        assertTrue("failed to start daemon", ssp.isDaemonAlive());
+        assertEquals("ssp version not compatible", highSspVersion, ssp.getSspVersion());
     }
 
     public void test_getService() {
@@ -123,4 +144,52 @@ public class SysServiceProxyTest extends AndroidTestCase {
         assertFalse("failed to stop daemon", ssp.isDaemonAlive());
     }
 
+    public void testSspPermissionCheck() {
+        SysServiceProxy ssp = SysServiceProxy.getInstance(getContext());
+        ssp.stopDaemon();
+        assertFalse("failed to stop daemon", ssp.isDaemonAlive());
+
+        int uid = android.os.Process.myUid();
+        ssp.doStartDaemon(uid + 1, ISysServiceProxy.SSP_VERSION);
+
+        try {
+            ssp.getSspVersion();
+            fail("permission checking failed");
+        } catch (SecurityException ignored) {
+            // expected
+        }
+
+        try {
+            ssp.getService(Context.POWER_SERVICE);
+            fail("permission checking failed");
+        } catch (SecurityException ignored) {
+            // expected
+        }
+
+        try {
+            ssp.checkService(Context.POWER_SERVICE);
+            fail("permission checking failed");
+        } catch (SecurityException ignored) {
+            // expected
+        }
+
+        try {
+            IBinder sspBinder = new SysServiceProxyNative(android.os.Process.myUid(),
+                    ISysServiceProxy.SSP_VERSION);
+            ssp.addService("ssp_test", sspBinder);
+            fail("permission checking failed");
+        } catch (SecurityException ignored) {
+            // expected
+        }
+
+        try {
+            ssp.listServices();
+            fail("permission checking failed");
+        } catch (SecurityException ignored) {
+            // expected
+        }
+
+        ssp.doStopDaemon(uid + 1);
+        assertFalse("failed to stop daemon", ssp.isDaemonAlive());
+    }
 }
