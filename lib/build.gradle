@@ -6,12 +6,14 @@ android {
 
     defaultConfig {
         minSdkVersion 9
+
+        consumerProguardFiles 'proguard-export.pro'
     }
 
     buildTypes {
         release {
             buildConfigField "boolean", "DISABLE_LOG", "false"
-            buildConfigField "boolean", "DEBUG_LOG", "true"
+            buildConfigField "boolean", "DEBUG_LOG", "false"
         }
 
         debug {
